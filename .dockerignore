@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*.pyo
+.pytest_cache
+.venv
+venv
+env
+
+# Node
+node_modules
+npm-debug.log
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Build outputs
+dist
+build
+*.egg-info
+
+# CraniumPy - exclude desktop app and resources (web uses craniometrics, registration, nicp, template only)
+CraniumPy/.git
+CraniumPy/gui
+CraniumPy/resources
+CraniumPy/CraniumPy.py
+CraniumPy/nricp.py
+CraniumPy/nicp/icp_from_nricp.py
+CraniumPy/nicp/nricp_mesh.py

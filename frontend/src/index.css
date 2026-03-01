@@ -1,0 +1,188 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: #1a1a2e;
+  color: #eaeaea;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.header {
+  background: #16213e;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #0f3460;
+}
+
+.header h1 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.menubar nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.menu-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #a0a0a0;
+}
+
+.menu button,
+.submenu button {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  background: #0f3460;
+  color: #eaeaea;
+  border: 1px solid #1a4a7a;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.menu button:hover:not(:disabled),
+.submenu button:hover:not(:disabled) {
+  background: #1a4a7a;
+}
+
+.menu button:disabled,
+.submenu button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.submenu {
+  margin-left: 0.5rem;
+}
+
+.submenu span {
+  display: block;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 280px;
+  min-width: 280px;
+  background: #16213e;
+  padding: 1rem;
+  overflow-y: auto;
+  border-right: 1px solid #0f3460;
+}
+
+.panel {
+  margin-bottom: 1.5rem;
+}
+
+.panel h3 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.panel h4 {
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+
+.landmark-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0.5rem 0;
+}
+
+.landmark-buttons button.active {
+  background: #e94560;
+  border-color: #e94560;
+}
+
+.picking-hint {
+  font-size: 0.85rem;
+  color: #e94560;
+  margin: 0.25rem 0;
+}
+
+.landmark-list {
+  font-size: 0.8rem;
+  font-family: monospace;
+  margin: 0.5rem 0;
+}
+
+.success {
+  color: #4ade80;
+  font-size: 0.85rem;
+  margin: 0.5rem 0;
+}
+
+.panel button.secondary {
+  margin-top: 0.5rem;
+  background: transparent;
+  border-color: #1a4a7a;
+}
+
+.metrics-section dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 1rem;
+  font-size: 0.9rem;
+}
+
+.metrics-section dt {
+  color: #a0a0a0;
+}
+
+.viewer-area {
+  flex: 1;
+  position: relative;
+  min-height: 400px;
+}
+
+.viewer-area .overlay {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.viewer-area .overlay.error {
+  background: rgba(233, 69, 96, 0.8);
+}
+
+.viewer-area .overlay.status {
+  background: rgba(15, 52, 96, 0.9);
+}

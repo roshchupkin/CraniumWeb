@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Node
+node_modules/
+npm-debug.log
+dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build / Docker
+build/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,36 @@
+# Minimal CraniumPy deps for CraniumWeb backend (no mayavi, PyQt5, dash, jupyter)
+# Core mesh/scientific stack
+numpy>=1.23,<2
+scipy>=1.9
+scikit-learn>=1.2
+pyvista>=0.32
+pyacvd>=0.2.7
+pymeshfix>=0.16.3
+open3d>=0.16
+vtk>=9.2
+
+# CranioMetrics (asymmetry requires menpo3d - optional, install separately if needed)
+matplotlib>=3.6
+pandas>=1.3
+
+# NICP (installed separately with SuiteSparse - see Dockerfile)
+# scikit-sparse>=0.4.8
+
+# Transitive / build
+Cython>=0.29
+Pillow>=9.3
+imageio>=2.22
+meshio>=4.4
+contourpy>=1.0
+cycler>=0.11
+fonttools>=4.38
+kiwisolver>=1.4
+pyparsing>=3.0
+packaging>=21.3
+joblib>=1.2
+threadpoolctl>=3.1
+certifi
+charset-normalizer
+idna
+urllib3
+six

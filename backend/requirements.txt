@@ -1,0 +1,9 @@
+# CraniumWeb Backend - wraps CraniumPy
+# For Docker: the Dockerfile uses requirements-docker.txt instead
+fastapi>=0.100.0
+uvicorn[standard]>=0.22.0
+python-multipart>=0.0.6
+
+# CraniumPy dependencies - install from CraniumPy environment
+# See CraniumPy/README.md for full setup (conda, scikit-sparse, etc.)
+# Core: pyvista, numpy, pyacvd, pymeshfix, open3d, scikit-learn, scipy, menpo3d
