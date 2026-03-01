@@ -2,9 +2,11 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-Browser-based craniofacial mesh registration and analysis. Rewrite of CraniumPy as a hybrid web app: React + Three.js frontend, FastAPI backend reusing CraniumPy algorithms.
+Browser-based craniofacial mesh registration and analysis. Rewrite of [CraniumPy](https://github.com/T-AbdelAlim/CraniumPy) as a hybrid web app: React + Three.js frontend, FastAPI backend reusing CraniumPy algorithms.
 
 **Repository**: [github.com/roshchupkin/CraniumWeb](https://github.com/roshchupkin/CraniumWeb)
+
+**Built on**: [CraniumPy](https://github.com/T-AbdelAlim/CraniumPy) by Tareq Abdel-Alim — craniofacial mesh registration and analysis. See [CraniumPy/README.md](CraniumPy/README.md) for citation and DOI.
 
 ## Docker Quick Start (recommended)
 
@@ -78,7 +80,7 @@ The frontend runs on http://localhost:5173 and proxies API requests to the backe
 CraniumWeb/
 ├── frontend/         # React + Three.js SPA
 ├── backend/          # FastAPI + CraniumPy service
-├── CraniumPy/        # Original CraniumPy (used as library)
+├── CraniumPy/        # Vendored from [T-AbdelAlim/CraniumPy](https://github.com/T-AbdelAlim/CraniumPy)
 ├── scripts/          # Local dev only: setup-craniumpy-env.ps1 for conda
 ├── docker-compose.yml
 └── README.md
