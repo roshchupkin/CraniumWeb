@@ -68,6 +68,16 @@ def _compute_asymmetry_heatmap(original_points, mirrored_points):
     return asymmetry_heatmap
 
 
+def _convert_to_open3d(mesh_pv):
+    """Convert PyVista mesh to Open3D TriangleMesh."""
+    m = o3d.geometry.TriangleMesh()
+    m.vertices = o3d.utility.Vector3dVector(mesh_pv.points)
+    m.triangles = o3d.utility.Vector3iVector(
+        mesh_pv.faces.reshape(-1, 4)[:, 1:]
+    )
+    return m
+
+
 def _repairsample(file_path: Path, n_vertices: int, postfix: str = "", repair: bool = False) -> Path:
     remesh = pv.read(file_path)
     if remesh.n_points <= 150000:
@@ -171,8 +181,8 @@ class CraniumService:
             "initial_lh_coord": np.round(landmarks_list[1], 3).tolist(),
             "initial_rh_coord": np.round(landmarks_list[2], 3).tolist(),
             "new_nasion": np.round(newpos[0], 3).tolist(),
-            "new_lh_coord": np.round(newpos[2], 3).tolist(),
-            "new_rh_coord": np.round(newpos[1], 3).tolist(),
+            "new_lh_coord": np.round(newpos[1], 3).tolist(),  # index 1 = left_tragus
+            "new_rh_coord": np.round(newpos[2], 3).tolist(),  # index 2 = right_tragus
         }
         return out_path, out_landmarks
 
@@ -184,7 +194,7 @@ class CraniumService:
         mesh_file = mesh_file.clip_surface(
             pv.Sphere(radius=125, center=(0, 40, 0)), invert=True
         )
-        mesh_file.clip(normal=[0, 0.6, 1], origin=[0, -60, -50], invert=False)
+        mesh_file = mesh_file.clip(normal=[0, 0.6, 1], origin=[0, -60, -50], invert=False)
         mesh_file = mesh_file.clip("y", origin=[0, -21, 0], invert=False)
 
         stem = mesh_path.stem
@@ -246,9 +256,14 @@ class CraniumService:
         return out_path
 
     def craniometrics(self, mesh_path: Path) -> dict:
-        """Extract cephalometric measurements. Returns metrics dict."""
+        """Extract cephalometric measurements. Returns metrics dict with HC line for visualization."""
         metrics = CranioMetrics(mesh_path)
         metrics.extract_dimensions(metrics.slice_height)
+        # Order HC slice points by angle for closed contour (x,z plane)
+        hcp = metrics.HC_s.points
+        angles = np.arctan2(hcp[:, 2], hcp[:, 0])
+        order = np.argsort(angles)
+        hc_points = hcp[order].tolist()
         return {
             "Datetime": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Filepath": str(mesh_path),
@@ -257,6 +272,7 @@ class CraniumService:
             "Cephalic_Index": metrics.CI,
             "Circumference_cm": metrics.HC,
             "MeshVolume_cc": round((metrics.pvmesh.volume / 1000), 2),
+            "hc_line": hc_points,
         }
 
     def calculate_asymmetry(self, mesh_path: Path) -> dict:
@@ -267,15 +283,7 @@ class CraniumService:
         mesh = pv.read(mesh_path)
         mirrored_mesh = _mirror_mesh(mesh)
 
-        def convert_to_open3d(mesh_pv):
-            m = o3d.geometry.TriangleMesh()
-            m.vertices = o3d.utility.Vector3dVector(mesh_pv.points)
-            m.triangles = o3d.utility.Vector3iVector(
-                mesh_pv.faces.reshape(-1, 4)[:, 1:]
-            )
-            return m
-
-        mirrored_o3d = convert_to_open3d(mirrored_mesh)
+        mirrored_o3d = _convert_to_open3d(mirrored_mesh)
         P = np.rollaxis(mirrored_mesh.points, 1)
         X = np.rollaxis(mesh.points, 1)
         Rr, tr, _ = IterativeClosestPoint(source_pts=P, target_pts=X, tau=10e-6)
@@ -320,14 +328,6 @@ class CraniumService:
         sourcemesh = pv.read(sourcepath)
         targetmesh = pv.read(targetpath)
 
-        def convert_to_open3d(mesh_pv):
-            m = o3d.geometry.TriangleMesh()
-            m.vertices = o3d.utility.Vector3dVector(mesh_pv.points)
-            m.triangles = o3d.utility.Vector3iVector(
-                mesh_pv.faces.reshape(-1, 4)[:, 1:]
-            )
-            return m
-
         P = np.rollaxis(sourcemesh.points, 1)
         X = np.rollaxis(targetmesh.points, 1)
         Rr, tr, _ = IterativeClosestPoint(source_pts=P, target_pts=X, tau=10e-6)
@@ -337,8 +337,8 @@ class CraniumService:
         write_ply_file_NICP(sourcemesh, Np, str(deformedpath))
         deformed_pv = pv.read(deformedpath)
 
-        deformed_rigid_o3d = convert_to_open3d(deformed_pv)
-        target_o3d = convert_to_open3d(targetmesh)
+        deformed_rigid_o3d = _convert_to_open3d(deformed_pv)
+        target_o3d = _convert_to_open3d(targetmesh)
         deformed_mesh = nonrigidIcp(deformed_rigid_o3d, target_o3d)
         o3d.io.write_triangle_mesh(filename=str(deformedpath), mesh=deformed_mesh)
 

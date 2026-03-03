@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { Canvas, ThreeEvent, useThree } from '@react-three/fiber';
 import { OrbitControls, Grid } from '@react-three/drei';
 import * as THREE from 'three';
@@ -10,10 +10,26 @@ interface MeshViewerProps {
   showEdges?: boolean;
   showGrid?: boolean;
   asymmetryHeatmap?: number[] | null;
+  /** Cephalometric HC line points [[x,y,z], ...] - rendered in red */
+  cephalometricLine?: [number, number, number][] | null;
   landmarks?: { nasion?: number[]; left_tragus?: number[]; right_tragus?: number[] } | null;
   viewPreset?: ViewPreset;
+  onPresetApplied?: () => void;
   onMeshClick?: (point: THREE.Vector3) => void;
   pickingMode?: boolean;
+}
+
+function CephalometricLine({ points }: { points: [number, number, number][] }) {
+  const geometry = useMemo(() => {
+    const pts = points.map((p) => new THREE.Vector3(p[0], p[1], p[2]));
+    return new THREE.BufferGeometry().setFromPoints(pts);
+  }, [points]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  return (
+    <lineLoop geometry={geometry}>
+      <lineBasicMaterial color="#e53935" linewidth={2} />
+    </lineLoop>
+  );
 }
 
 function scalarToColor(t: number, min: number, max: number): [number, number, number] {
@@ -28,7 +44,13 @@ function scalarToColor(t: number, min: number, max: number): [number, number, nu
   return [0.8 - 0.6 * s, 0.2, 0.2 + 0.8 * s];
 }
 
-function CameraController({ preset }: { preset: ViewPreset }) {
+function CameraController({
+  preset,
+  onPresetApplied,
+}: {
+  preset: ViewPreset;
+  onPresetApplied?: () => void;
+}) {
   const { camera } = useThree();
   useEffect(() => {
     if (!preset) return;
@@ -60,7 +82,8 @@ function CameraController({ preset }: { preset: ViewPreset }) {
         break;
     }
     camera.updateProjectionMatrix();
-  }, [preset, camera]);
+    onPresetApplied?.();
+  }, [preset, camera, onPresetApplied]);
   return null;
 }
 
@@ -69,6 +92,7 @@ function SceneContent({
   showEdges = true,
   showGrid = true,
   asymmetryHeatmap = null,
+  cephalometricLine = null,
   landmarks = null,
   onMeshClick,
   pickingMode = false,
@@ -82,6 +106,40 @@ function SceneContent({
     }
   };
 
+  const meshGeometries = useMemo(() => {
+    if (!mesh) return null;
+    const geo = mesh.clone();
+    if (!geo.attributes.normal) {
+      geo.computeVertexNormals();
+    }
+    if (asymmetryHeatmap && asymmetryHeatmap.length >= geo.attributes.position.count) {
+      const posCount = geo.attributes.position.count;
+      const colors = new Float32Array(posCount * 3);
+      const min = asymmetryHeatmap.reduce((a, b) => (a < b ? a : b), Infinity);
+      const max = asymmetryHeatmap.reduce((a, b) => (a > b ? a : b), -Infinity);
+      for (let i = 0; i < posCount; i++) {
+        const [r, g, b] = scalarToColor(asymmetryHeatmap[i], min, max);
+        colors[i * 3] = r;
+        colors[i * 3 + 1] = g;
+        colors[i * 3 + 2] = b;
+      }
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    }
+    const edgesGeometry = new THREE.EdgesGeometry(geo, 15);
+    const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x333333 });
+    return { geometry: geo, edgesGeometry, edgesMaterial };
+  }, [mesh, asymmetryHeatmap]);
+
+  useEffect(() => {
+    return () => {
+      if (meshGeometries) {
+        meshGeometries.geometry.dispose();
+        meshGeometries.edgesGeometry.dispose();
+        meshGeometries.edgesMaterial.dispose();
+      }
+    };
+  }, [meshGeometries]);
+
   if (!mesh) {
     return (
       <mesh>
@@ -91,34 +149,15 @@ function SceneContent({
     );
   }
 
-  const geo = mesh.clone();
-  if (!geo.attributes.normal) {
-    geo.computeVertexNormals();
-  }
-
-  if (asymmetryHeatmap && asymmetryHeatmap.length >= geo.attributes.position.count) {
-    const posCount = geo.attributes.position.count;
-    const colors = new Float32Array(posCount * 3);
-    const min = Math.min(...asymmetryHeatmap);
-    const max = Math.max(...asymmetryHeatmap);
-    for (let i = 0; i < posCount; i++) {
-      const [r, g, b] = scalarToColor(asymmetryHeatmap[i], min, max);
-      colors[i * 3] = r;
-      colors[i * 3 + 1] = g;
-      colors[i * 3 + 2] = b;
-    }
-    geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-  }
-
   return (
     <>
       <mesh
         ref={meshRef}
-        geometry={geo}
+        geometry={meshGeometries!.geometry}
         onPointerDown={handlePointerDown}
       >
         <meshStandardMaterial
-          vertexColors={!!geo.attributes.color}
+          vertexColors={!!meshGeometries!.geometry.attributes.color}
           color="#f5f5dc"
           side={THREE.DoubleSide}
           wireframe={false}
@@ -126,8 +165,8 @@ function SceneContent({
       </mesh>
       {showEdges && (
         <lineSegments
-          geometry={new THREE.EdgesGeometry(geo, 15)}
-          material={new THREE.LineBasicMaterial({ color: 0x333333, linewidth: 1 })}
+          geometry={meshGeometries!.edgesGeometry}
+          material={meshGeometries!.edgesMaterial}
         />
       )}
       {showGrid && <Grid infiniteGrid cellSize={10} cellThickness={0.5} sectionSize={50} sectionThickness={1} fadeDistance={150} fadeStrength={0.5} />}
@@ -140,6 +179,9 @@ function SceneContent({
               <meshStandardMaterial color="#22c55e" />
             </mesh>
           ))}
+      {cephalometricLine && cephalometricLine.length >= 2 && (
+        <CephalometricLine points={cephalometricLine} />
+      )}
     </>
   );
 }
@@ -151,7 +193,10 @@ export function MeshViewer(props: MeshViewerProps) {
         camera={{ position: [0, 0, 80], fov: 45 }}
         gl={{ antialias: true }}
       >
-        <CameraController preset={props.viewPreset ?? null} />
+        <CameraController
+          preset={props.viewPreset ?? null}
+          onPresetApplied={props.onPresetApplied}
+        />
         <ambientLight intensity={0.6} />
         <directionalLight position={[50, 50, 50]} intensity={0.8} />
         <directionalLight position={[-50, -50, 50]} intensity={0.4} />

@@ -56,17 +56,23 @@ function App() {
   );
 
   const runApi = useCallback(
-    async <T,>(fn: () => Promise<T>): Promise<T | null> => {
+    async <T,>(
+      fn: () => Promise<T>,
+      initialStatus?: string
+    ): Promise<T | null> => {
       setProcessing(true);
-      setStatusMessage(null);
+      setStatusMessage(initialStatus ?? null);
+      let hadError = false;
       try {
         const result = await fn();
         return result;
       } catch (err) {
+        hadError = true;
         setStatusMessage(err instanceof Error ? err.message : 'Error');
         return null;
       } finally {
         setProcessing(false);
+        if (!hadError) setStatusMessage(null);
       }
     },
     []
@@ -140,8 +146,10 @@ function App() {
 
   const handleNICPCranium = useCallback(async () => {
     if (!currentMeshFile) return;
-    setStatusMessage('NICP in progress...');
-    const blob = await runApi(() => api.runNICP(currentMeshFile, 'cranium'));
+    const blob = await runApi(
+      () => api.runNICP(currentMeshFile, 'cranium'),
+      'NICP in progress...'
+    );
     if (blob) {
       const name = (currentMeshFile.name || 'mesh.ply').replace(/\.[^.]+$/, '_c_nicp.ply');
       const newFile = new File([blob], name, { type: 'application/octet-stream' });
@@ -152,8 +160,10 @@ function App() {
 
   const handleNICPFace = useCallback(async () => {
     if (!currentMeshFile) return;
-    setStatusMessage('NICP in progress...');
-    const blob = await runApi(() => api.runNICP(currentMeshFile, 'face'));
+    const blob = await runApi(
+      () => api.runNICP(currentMeshFile, 'face'),
+      'NICP in progress...'
+    );
     if (blob) {
       const name = (currentMeshFile.name || 'mesh.ply').replace(/\.[^.]+$/, '_f_nicp.ply');
       const newFile = new File([blob], name, { type: 'application/octet-stream' });
@@ -180,6 +190,7 @@ function App() {
   const handleViewXZ = useCallback(() => setViewPreset('xz'), []);
 
   const handleExportMetrics = useCallback(() => {
+    if (!metrics && !asymmetry) return;
     const data = { metrics, asymmetry };
     const blob = new Blob([JSON.stringify(data, null, 2)], {
       type: 'application/json',
@@ -204,7 +215,7 @@ function App() {
           onCranialCut={handleCranialCut}
           onFacialClip={handleFacialClip}
           onCephalometrics={handleCephalometrics}
-          onSliceOnly={handleCephalometrics}
+          onSliceOnly={handleCephalometrics} // Same as cephalometrics until distinct 2D slice feature exists
           onAsymmetry={handleAsymmetry}
           onNICPCranium={handleNICPCranium}
           onNICPFace={handleNICPFace}
@@ -240,8 +251,10 @@ function App() {
             showEdges
             showGrid={showGrid}
             asymmetryHeatmap={asymmetry?.asymmetry_heatmap ?? null}
+            cephalometricLine={metrics?.hc_line ?? null}
             landmarks={landmarks}
             viewPreset={viewPreset}
+            onPresetApplied={() => setViewPreset(null)}
             onMeshClick={handleMeshClick}
             pickingMode={!!pickingTarget}
           />

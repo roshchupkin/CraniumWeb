@@ -1,10 +1,12 @@
 """Registration endpoints: register, cranial-cut, facial-clip."""
 
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
-import tempfile
+import base64
 import json
+import tempfile
 from pathlib import Path
+
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi.responses import FileResponse
 
 from services.cranium_service import CraniumService
 
@@ -18,6 +20,9 @@ async def register(
     target: str = Form("cranium"),
 ):
     """Register mesh with three landmarks. Returns PLY + landmarks JSON."""
+    if target not in ("cranium", "face"):
+        raise HTTPException(400, "target must be 'cranium' or 'face'")
+
     try:
         landmarks_dict = json.loads(landmarks)
         for key in ["nasion", "left_tragus", "right_tragus"]:
@@ -44,7 +49,6 @@ async def register(
         # Simpler: return the PLY file and put landmarks in a custom header or as a separate endpoint
         # Best: return JSON with { landmarks, download_url } - but we can't have a download_url for temp
         # So: return the PLY file in response body, and landmarks as a header X-Landmarks: base64(json)
-        import base64
         landmarks_b64 = base64.b64encode(
             json.dumps(out_landmarks).encode()
         ).decode()

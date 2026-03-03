@@ -18,6 +18,10 @@ export function useMeshLoader() {
     const loadPly = () => {
       const loader = new PLYLoader();
       const reader = new FileReader();
+      reader.onerror = () => {
+        setError('Failed to read file');
+        setLoading(false);
+      };
       reader.onload = (e) => {
         try {
           const buffer = e.target?.result as ArrayBuffer;
@@ -36,6 +40,10 @@ export function useMeshLoader() {
     const loadObj = () => {
       const loader = new OBJLoader();
       const reader = new FileReader();
+      reader.onerror = () => {
+        setError('Failed to read file');
+        setLoading(false);
+      };
       reader.onload = (e) => {
         try {
           const text = e.target?.result as string;
@@ -66,6 +74,10 @@ export function useMeshLoader() {
     const loadStl = () => {
       const loader = new STLLoader();
       const reader = new FileReader();
+      reader.onerror = () => {
+        setError('Failed to read file');
+        setLoading(false);
+      };
       reader.onload = (e) => {
         try {
           const buffer = e.target?.result as ArrayBuffer;

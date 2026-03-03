@@ -27,8 +27,8 @@ async def asymmetry(mesh: UploadFile = File(...)):
         except RuntimeError as e:
             if "menpo3d" in str(e):
                 raise HTTPException(
-                    501,
-                    "Asymmetry calculation requires menpo3d (not installed)",
+                    status_code=501,
+                    detail="Asymmetry calculation requires menpo3d (not installed)",
                 )
             raise HTTPException(500, str(e))
         except Exception as e:

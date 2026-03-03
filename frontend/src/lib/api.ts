@@ -25,6 +25,8 @@ export interface Metrics {
   Cephalic_Index?: number;
   Circumference_cm?: number;
   MeshVolume_cc?: number;
+  /** Head circumference slice points [[x,y,z], ...] for red line visualization */
+  hc_line?: [number, number, number][];
 }
 
 export interface AsymmetryResult {
@@ -121,6 +123,19 @@ export async function getAsymmetry(meshFile: File): Promise<AsymmetryResult> {
     method: 'POST',
     body: form,
   });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) {
+    const text = await res.text();
+    let message = text;
+    try {
+      const json = JSON.parse(text);
+      if (json.detail) message = json.detail;
+    } catch {
+      /* use raw text */
+    }
+    if (res.status === 501) {
+      message = message || 'Asymmetry requires menpo3d (not installed). Use local dev with conda env, or see README.';
+    }
+    throw new Error(message);
+  }
   return res.json();
 }
